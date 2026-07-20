@@ -286,6 +286,14 @@
         font-weight: 800;
       }
 
+      .choice-card-title small {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+
       .choice-check {
         display: grid;
         width: 21px;
@@ -599,6 +607,23 @@
         font-size: 0.82rem;
       }
 
+      .discount-badge {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 12px;
+        padding: 6px 10px;
+        border: 1px solid rgba(213, 236, 204, 0.34);
+        border-radius: 999px;
+        background: rgba(213, 236, 204, 0.14);
+        color: #d9efcf;
+        font-size: 0.72rem;
+        font-weight: 800;
+      }
+
+      .discount-badge[hidden] {
+        display: none;
+      }
+
       .summary-body {
         padding: 25px 30px 30px;
       }
@@ -637,6 +662,16 @@
         font-size: 0.86rem;
         font-weight: 800;
         text-align: right;
+      }
+
+      .breakdown-row.discount-row dd {
+        color: var(--sage);
+      }
+
+      .breakdown-row.final-stay-row dt,
+      .breakdown-row.final-stay-row dd {
+        color: var(--brand-dark);
+        font-weight: 800;
       }
 
       .summary-divider {
@@ -692,6 +727,13 @@
         color: var(--muted);
         font-size: 0.75rem;
         text-align: center;
+      }
+
+      .version-tag {
+        display: block;
+        margin-top: 4px;
+        color: #a49d92;
+        font-size: 0.66rem;
       }
 
       @media (max-width: 860px) {
@@ -840,7 +882,7 @@
                   <input type="radio" name="room" value="small" checked />
                   <span class="choice-card-body">
                     <span class="choice-card-top">
-                      <span class="choice-card-title">小貓房</span>
+                      <span class="choice-card-title">小貓房<small>最多入住 4 貓</small></span>
                       <span class="choice-check" aria-hidden="true">✓</span>
                     </span>
                     <span class="choice-card-price">
@@ -853,7 +895,7 @@
                   <input type="radio" name="room" value="family" />
                   <span class="choice-card-body">
                     <span class="choice-card-top">
-                      <span class="choice-card-title">探險家庭房</span>
+                      <span class="choice-card-title">探險家庭房<small>最多入住 6 貓</small></span>
                       <span class="choice-check" aria-hidden="true">✓</span>
                     </span>
                     <span class="choice-card-price">
@@ -874,7 +916,7 @@
             <div class="cat-row">
               <div class="cat-copy">
                 <strong>幾隻貓咪入住？</strong>
-                <span>第 2 隻起，每隻每晚加收 NT$200</span>
+                <span id="catLimitNote">第 2 隻起每隻每晚加收 NT$200・本房最多 4 貓</span>
               </div>
               <div class="stepper" role="group" aria-label="貓咪數量">
                 <button type="button" id="decreaseCats" aria-label="減少一隻貓">−</button>
@@ -884,7 +926,7 @@
                   type="number"
                   value="1"
                   min="1"
-                  max="20"
+                  max="4"
                   step="1"
                   inputmode="numeric"
                   aria-label="貓咪數量"
@@ -958,6 +1000,7 @@
             <p class="total-label">預估總金額</p>
             <p class="total-amount" id="totalAmount" aria-live="polite">NT$0</p>
             <p class="stay-summary" id="staySummary">請選擇住宿日期</p>
+            <span class="discount-badge" id="discountBadge" hidden>長住優惠已套用</span>
           </div>
 
           <div class="summary-body">
@@ -967,8 +1010,16 @@
                 <dd id="nightlyRate">NT$850</dd>
               </div>
               <div class="breakdown-row">
-                <dt>住宿費<span id="nightCountLabel">0 晚</span></dt>
+                <dt>住宿原價<span id="nightCountLabel">0 晚</span></dt>
                 <dd id="staySubtotal">NT$0</dd>
+              </div>
+              <div class="breakdown-row discount-row">
+                <dt>長住優惠<span id="discountLabel">未達 7 晚</span></dt>
+                <dd id="discountAmount">NT$0</dd>
+              </div>
+              <div class="breakdown-row final-stay-row">
+                <dt>折扣後住宿費<span id="discountedStayLabel">未套用折扣</span></dt>
+                <dd id="discountedStaySubtotal">NT$0</dd>
               </div>
               <div class="breakdown-row">
                 <dt>超時安親費<span id="daycareLabel">15:00（含）前退宿</span></dt>
@@ -979,7 +1030,7 @@
             <div class="summary-divider"></div>
 
             <p class="formula-note" id="formulaNote">
-              總金額＝單晚房價 × 住宿晚數。超過 15:00 退宿時，再加收單晚房價的 50%。
+              住宿 7 晚以上享 95 折，14 晚以上享 9 折。超過 15:00 退宿時，再加收單晚房價的 50%。
             </p>
 
             <button class="copy-button" id="copyQuote" type="button">
@@ -990,7 +1041,10 @@
         </aside>
       </div>
 
-      <p class="footer-note">此頁面僅供費用試算，實際入住安排以貓家日子確認結果為準。</p>
+      <p class="footer-note">
+        此頁面僅供費用試算，實際入住安排以貓家日子確認結果為準。
+        <span class="version-tag" id="versionTag">計算機版本 2026.07-r4</span>
+      </p>
     </main>
 
     <script>
@@ -998,12 +1052,17 @@
         "use strict";
 
         const ROOM_TYPES = Object.freeze({
-          small: { name: "小貓房", baseRate: 850 },
-          family: { name: "探險家庭房", baseRate: 1300 },
+          small: { name: "小貓房", baseRate: 850, maxCats: 4 },
+          family: { name: "探險家庭房", baseRate: 1300, maxCats: 6 },
         });
 
+        const APP_VERSION = "2026.07-r4";
         const EXTRA_CAT_RATE = 200;
         const DAYCARE_RATE = 0.5;
+        const LONG_STAY_TIERS = Object.freeze([
+          { minimumNights: 14, multiplier: 0.9, name: "9 折", description: "14 晚以上・9 折" },
+          { minimumNights: 7, multiplier: 0.95, name: "95 折", description: "7–13 晚・95 折" },
+        ]);
         const MILLISECONDS_PER_DAY = 86_400_000;
 
         const form = document.getElementById("calculatorForm");
@@ -1012,6 +1071,7 @@
         const increaseCatsButton = document.getElementById("increaseCats");
         const checkInInput = document.getElementById("checkIn");
         const checkOutInput = document.getElementById("checkOut");
+        const catLimitNote = document.getElementById("catLimitNote");
         const dateError = document.getElementById("dateError");
         const copyButton = document.getElementById("copyQuote");
         const copyButtonText = document.getElementById("copyButtonText");
@@ -1019,13 +1079,19 @@
         const output = {
           totalAmount: document.getElementById("totalAmount"),
           staySummary: document.getElementById("staySummary"),
+          discountBadge: document.getElementById("discountBadge"),
           nightlyFormula: document.getElementById("nightlyFormula"),
           nightlyRate: document.getElementById("nightlyRate"),
           nightCountLabel: document.getElementById("nightCountLabel"),
           staySubtotal: document.getElementById("staySubtotal"),
+          discountLabel: document.getElementById("discountLabel"),
+          discountAmount: document.getElementById("discountAmount"),
+          discountedStayLabel: document.getElementById("discountedStayLabel"),
+          discountedStaySubtotal: document.getElementById("discountedStaySubtotal"),
           daycareLabel: document.getElementById("daycareLabel"),
           daycareFee: document.getElementById("daycareFee"),
           formulaNote: document.getElementById("formulaNote"),
+          versionTag: document.getElementById("versionTag"),
         };
 
         let currentQuote = null;
@@ -1070,24 +1136,40 @@
           return isoDate.replaceAll("-", "/");
         }
 
-        function clampCats(value) {
+        function clampCats(value, maxCats) {
           const parsed = Number.parseInt(value, 10);
           if (!Number.isFinite(parsed)) return 1;
-          return Math.min(20, Math.max(1, parsed));
+          return Math.min(maxCats, Math.max(1, parsed));
+        }
+
+        function getLongStayTier(nights) {
+          return (
+            LONG_STAY_TIERS.find((tier) => nights >= tier.minimumNights) || {
+              minimumNights: 0,
+              multiplier: 1,
+              name: "無折扣",
+              description: "未達 7 晚",
+            }
+          );
         }
 
         function calculateStay({ roomKey, cats, checkIn, checkOut, isLate }) {
           const room = ROOM_TYPES[roomKey];
+          const normalizedCats = clampCats(cats, room.maxCats);
           const nights = daysBetween(checkIn, checkOut);
-          const extraCatFeePerNight = EXTRA_CAT_RATE * Math.max(0, cats - 1);
+          const extraCatFeePerNight = EXTRA_CAT_RATE * Math.max(0, normalizedCats - 1);
           const nightlyRate = room.baseRate + extraCatFeePerNight;
           const staySubtotal = nightlyRate * nights;
+          const longStayTier = getLongStayTier(nights);
+          const discountRate = 1 - longStayTier.multiplier;
+          const discountedStaySubtotal = Math.round(staySubtotal * longStayTier.multiplier);
+          const discountAmount = staySubtotal - discountedStaySubtotal;
           const daycareFee = isLate ? nightlyRate * DAYCARE_RATE : 0;
 
           return {
             room,
             roomKey,
-            cats,
+            cats: normalizedCats,
             checkIn,
             checkOut,
             isLate,
@@ -1095,15 +1177,22 @@
             extraCatFeePerNight,
             nightlyRate,
             staySubtotal,
+            discountRate,
+            discountMultiplier: longStayTier.multiplier,
+            discountName: longStayTier.name,
+            discountDescription: longStayTier.description,
+            discountAmount,
+            discountedStaySubtotal,
             daycareFee,
-            total: staySubtotal + daycareFee,
+            total: discountedStaySubtotal + daycareFee,
           };
         }
 
         function getFormState() {
+          const roomKey = form.elements.room.value;
           return {
-            roomKey: form.elements.room.value,
-            cats: clampCats(catCountInput.value),
+            roomKey,
+            cats: clampCats(catCountInput.value, ROOM_TYPES[roomKey].maxCats),
             checkIn: checkInInput.value,
             checkOut: checkOutInput.value,
             isLate: form.elements.checkoutTime.value === "late",
@@ -1124,6 +1213,7 @@
           currentQuote = null;
           output.totalAmount.textContent = "NT$0";
           output.staySummary.textContent = "請確認住宿日期";
+          output.discountBadge.hidden = true;
           output.nightlyRate.textContent = formatMoney(nightlyRate);
           output.nightlyFormula.textContent =
             state.cats > 1
@@ -1131,6 +1221,10 @@
               : `基本房價 ${formatMoney(room.baseRate)}`;
           output.nightCountLabel.textContent = "0 晚";
           output.staySubtotal.textContent = "NT$0";
+          output.discountLabel.textContent = "未達 7 晚";
+          output.discountAmount.textContent = "NT$0";
+          output.discountedStayLabel.textContent = "未套用折扣";
+          output.discountedStaySubtotal.textContent = "NT$0";
           output.daycareLabel.textContent = state.isLate
             ? "單晚房價 × 50%"
             : "15:00（含）前退宿";
@@ -1155,15 +1249,33 @@
               : `基本房價 ${formatMoney(quote.room.baseRate)}`;
           output.nightCountLabel.textContent = `${formatMoney(quote.nightlyRate)} × ${quote.nights} 晚`;
           output.staySubtotal.textContent = formatMoney(quote.staySubtotal);
+          output.discountLabel.textContent =
+            quote.discountDescription;
+          output.discountAmount.textContent = quote.discountAmount
+            ? `−${formatMoney(quote.discountAmount)}`
+            : "NT$0";
+          output.discountedStayLabel.textContent = quote.discountRate
+            ? `已套用 ${quote.discountName}`
+            : "未套用折扣";
+          output.discountedStaySubtotal.textContent = formatMoney(quote.discountedStaySubtotal);
+          output.discountBadge.hidden = !quote.discountRate;
+          output.discountBadge.textContent = quote.discountRate
+            ? `✓ 已自動套用 ${quote.discountName}長住優惠`
+            : "";
           output.daycareLabel.textContent = quote.isLate
             ? `${formatMoney(quote.nightlyRate)} × 50%`
             : "15:00（含）前退宿";
           output.daycareFee.textContent = formatMoney(quote.daycareFee);
+          const discountText = quote.discountRate
+            ? ` × ${quote.discountMultiplier}＝${formatMoney(
+                quote.discountedStaySubtotal,
+              )}`
+            : "";
           output.formulaNote.textContent = quote.isLate
-            ? `總金額＝${formatMoney(quote.nightlyRate)} × ${quote.nights} 晚＋${formatMoney(
+            ? `住宿費 ${formatMoney(quote.staySubtotal)}${discountText}，另加 ${formatMoney(
                 quote.daycareFee,
               )} 安親費。`
-            : `總金額＝${formatMoney(quote.nightlyRate)} × ${quote.nights} 晚。`;
+            : `住宿費 ${formatMoney(quote.staySubtotal)}${discountText}。`;
 
           copyButton.disabled = false;
           setDateError();
@@ -1171,9 +1283,12 @@
 
         function updateCalculator() {
           const state = getFormState();
+          const maxCats = ROOM_TYPES[state.roomKey].maxCats;
           catCountInput.value = state.cats;
+          catCountInput.max = maxCats;
+          catLimitNote.textContent = `第 2 隻起每隻每晚加收 NT$200・本房最多 ${maxCats} 貓`;
           decreaseCatsButton.disabled = state.cats <= 1;
-          increaseCatsButton.disabled = state.cats >= 20;
+          increaseCatsButton.disabled = state.cats >= maxCats;
 
           if (!state.checkIn || !state.checkOut) {
             renderEmptyState(state, "請完整選擇入住日期與退宿日期。");
@@ -1190,11 +1305,24 @@
         }
 
         function setCatCount(nextValue) {
-          catCountInput.value = clampCats(nextValue);
+          const roomKey = form.elements.room.value;
+          catCountInput.value = clampCats(nextValue, ROOM_TYPES[roomKey].maxCats);
           updateCalculator();
         }
 
         function createQuoteText(quote) {
+          const priceLines = [
+            `單晚房價：${formatMoney(quote.nightlyRate)}`,
+            `住宿費：${formatMoney(quote.staySubtotal)}`,
+          ];
+
+          if (quote.discountAmount) {
+            priceLines.push(
+              `長住優惠（${quote.discountName}）：−${formatMoney(quote.discountAmount)}`,
+              `折扣後住宿費：${formatMoney(quote.discountedStaySubtotal)}`,
+            );
+          }
+
           const lines = [
             "貓家日子｜住宿費用試算",
             "",
@@ -1205,8 +1333,7 @@
             )}（共 ${quote.nights} 晚）`,
             `退宿時間：${quote.isLate ? "超過 15:00" : "15:00（含）以前"}`,
             "",
-            `單晚房價：${formatMoney(quote.nightlyRate)}`,
-            `住宿費：${formatMoney(quote.staySubtotal)}`,
+            ...priceLines,
             `超時安親費：${formatMoney(quote.daycareFee)}`,
             `合計：${formatMoney(quote.total)}`,
             "",
@@ -1289,12 +1416,14 @@
         });
 
         initializeDates();
+        output.versionTag.textContent = `計算機版本 ${APP_VERSION}`;
         updateCalculator();
 
         // 保留純計算函式，方便日後自動測試與調整房價。
         window.CatStayCalculator = Object.freeze({
           calculateStay,
           daysBetween,
+          getLongStayTier,
           roomTypes: ROOM_TYPES,
         });
       })();
