@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="貓家日子貓旅館住宿金額計算機：依房型、貓咪數量、住宿日期與退宿時間即時計算費用。"
+    />
+    <meta name="theme-color" content="#f7f1e7" />
+    <title>貓家日子｜住宿金額計算機</title>
+
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #fffdf9;
+        --canvas: #f6f0e6;
+        --canvas-deep: #eee4d5;
+        --ink: #292722;
+        --muted: #716d64;
+        --line: #ded5c7;
+        --brand: #98694e;
+        --brand-dark: #724833;
+        --brand-soft: #eee0d4;
+        --sage: #80927c;
+        --sage-soft: #e7eee4;
+        --danger: #a04438;
+        --shadow: 0 20px 55px rgba(70, 52, 39, 0.12);
+        --radius-lg: 28px;
+        --radius-md: 18px;
+        --radius-sm: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-width: 320px;
+        background: var(--canvas);
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 9% 8%, rgba(255, 255, 255, 0.85) 0 7%, transparent 21%),
+          radial-gradient(circle at 94% 86%, rgba(220, 203, 181, 0.72) 0 6%, transparent 25%),
+          var(--canvas);
+        font-family:
+          "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system,
+          BlinkMacSystemFont, sans-serif;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button,
+      label {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      button {
+        color: inherit;
+      }
+
+      .page-shell {
+        width: min(1120px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 46px 0 54px;
+      }
+
+      .masthead {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 32px;
+        margin-bottom: 28px;
+      }
+
+      .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .brand-mark {
+        position: relative;
+        display: grid;
+        width: 58px;
+        height: 58px;
+        flex: 0 0 auto;
+        place-items: center;
+        overflow: hidden;
+        border: 1px solid rgba(114, 72, 51, 0.16);
+        border-radius: 19px;
+        background: var(--brand-soft);
+        color: var(--brand-dark);
+        font-size: 27px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+
+      .brand-mark::before,
+      .brand-mark::after {
+        position: absolute;
+        top: -5px;
+        width: 21px;
+        height: 21px;
+        border-radius: 4px;
+        background: var(--brand);
+        content: "";
+        opacity: 0.22;
+        transform: rotate(45deg);
+      }
+
+      .brand-mark::before {
+        left: 6px;
+      }
+
+      .brand-mark::after {
+        right: 6px;
+      }
+
+      .eyebrow {
+        margin: 0 0 2px;
+        color: var(--brand-dark);
+        font-size: 0.79rem;
+        font-weight: 800;
+        letter-spacing: 0.17em;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+        font-size: clamp(2rem, 4vw, 3.05rem);
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        line-height: 1.12;
+      }
+
+      .masthead-note {
+        max-width: 390px;
+        margin: 0 0 4px;
+        color: var(--muted);
+        font-size: 0.94rem;
+        text-align: right;
+      }
+
+      .calculator-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(330px, 0.85fr);
+        gap: 22px;
+        align-items: start;
+      }
+
+      .panel {
+        border: 1px solid rgba(143, 119, 96, 0.2);
+        border-radius: var(--radius-lg);
+        background: rgba(255, 253, 249, 0.94);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .form-panel {
+        padding: clamp(24px, 4vw, 38px);
+      }
+
+      .section + .section {
+        padding-top: 30px;
+        margin-top: 30px;
+        border-top: 1px solid var(--line);
+      }
+
+      .section-heading {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        margin: 0 0 15px;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .step-number {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--ink);
+        color: var(--paper);
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+
+      fieldset {
+        min-width: 0;
+        padding: 0;
+        margin: 0;
+        border: 0;
+      }
+
+      legend {
+        padding: 0;
+      }
+
+      .visually-hidden {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
+
+      .room-options {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .choice-card,
+      .time-choice {
+        position: relative;
+        cursor: pointer;
+      }
+
+      .choice-card input,
+      .time-choice input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .choice-card-body {
+        display: flex;
+        min-height: 112px;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--paper);
+        transition:
+          border-color 160ms ease,
+          background-color 160ms ease,
+          box-shadow 160ms ease,
+          transform 160ms ease;
+      }
+
+      .choice-card:hover .choice-card-body {
+        transform: translateY(-2px);
+        border-color: #cbb8a7;
+      }
+
+      .choice-card input:focus-visible + .choice-card-body,
+      .time-choice input:focus-visible + .time-choice-body {
+        outline: 3px solid rgba(128, 146, 124, 0.34);
+        outline-offset: 3px;
+      }
+
+      .choice-card input:checked + .choice-card-body {
+        border-color: var(--brand);
+        background: var(--brand-soft);
+        box-shadow: inset 0 0 0 1px var(--brand);
+      }
+
+      .choice-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .choice-card-title {
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .choice-check {
+        display: grid;
+        width: 21px;
+        height: 21px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: var(--paper);
+        color: transparent;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .choice-card input:checked + .choice-card-body .choice-check {
+        border-color: var(--brand-dark);
+        background: var(--brand-dark);
+        color: white;
+      }
+
+      .choice-card-price {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        margin-top: 13px;
+        color: var(--brand-dark);
+      }
+
+      .choice-card-price strong {
+        font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+        font-size: 1.55rem;
+        letter-spacing: -0.04em;
+      }
+
+      .choice-card-price span {
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .cat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--paper);
+      }
+
+      .cat-copy strong {
+        display: block;
+        margin-bottom: 3px;
+      }
+
+      .cat-copy span {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .stepper {
+        display: grid;
+        grid-template-columns: 42px 52px 42px;
+        align-items: center;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--canvas);
+      }
+
+      .stepper button {
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--brand-dark);
+        cursor: pointer;
+        font-size: 1.35rem;
+        font-weight: 700;
+        transition: background-color 140ms ease;
+      }
+
+      .stepper button:hover {
+        background: var(--brand-soft);
+      }
+
+      .stepper button:focus-visible,
+      .copy-button:focus-visible {
+        outline: 3px solid rgba(128, 146, 124, 0.45);
+        outline-offset: -3px;
+      }
+
+      .stepper button:disabled {
+        color: #aaa39a;
+        cursor: not-allowed;
+      }
+
+      .stepper input {
+        width: 52px;
+        height: 42px;
+        padding: 0;
+        border: 0;
+        border-right: 1px solid var(--line);
+        border-left: 1px solid var(--line);
+        outline: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-weight: 800;
+        text-align: center;
+        appearance: textfield;
+      }
+
+      .stepper input::-webkit-outer-spin-button,
+      .stepper input::-webkit-inner-spin-button {
+        margin: 0;
+        appearance: none;
+      }
+
+      .date-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .field-label {
+        display: block;
+        margin: 0 0 7px 2px;
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .date-input {
+        width: 100%;
+        min-height: 50px;
+        padding: 0 13px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        outline: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-weight: 700;
+        transition:
+          border-color 140ms ease,
+          box-shadow 140ms ease;
+      }
+
+      .date-input:focus {
+        border-color: var(--sage);
+        box-shadow: 0 0 0 3px rgba(128, 146, 124, 0.2);
+      }
+
+      .date-caption {
+        margin: 11px 2px 0;
+        color: var(--muted);
+        font-size: 0.79rem;
+      }
+
+      .time-options {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .time-choice-body {
+        display: flex;
+        min-height: 76px;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--paper);
+        transition:
+          border-color 160ms ease,
+          background-color 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .time-choice input:checked + .time-choice-body {
+        border-color: var(--sage);
+        background: var(--sage-soft);
+        box-shadow: inset 0 0 0 1px var(--sage);
+      }
+
+      .radio-dot {
+        display: grid;
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+        place-items: center;
+        border: 1px solid #afa89d;
+        border-radius: 50%;
+        background: white;
+      }
+
+      .radio-dot::after {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--sage);
+        content: "";
+        opacity: 0;
+        transform: scale(0.4);
+        transition:
+          opacity 130ms ease,
+          transform 130ms ease;
+      }
+
+      .time-choice input:checked + .time-choice-body .radio-dot::after {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .time-choice-copy strong,
+      .time-choice-copy span {
+        display: block;
+      }
+
+      .time-choice-copy strong {
+        margin-bottom: 2px;
+        font-size: 0.91rem;
+      }
+
+      .time-choice-copy span {
+        color: var(--muted);
+        font-size: 0.74rem;
+      }
+
+      .error-message {
+        display: none;
+        margin: 14px 0 0;
+        padding: 11px 13px;
+        border-radius: 10px;
+        background: #f7e8e5;
+        color: var(--danger);
+        font-size: 0.84rem;
+        font-weight: 700;
+      }
+
+      .error-message.is-visible {
+        display: block;
+      }
+
+      .summary-panel {
+        position: sticky;
+        top: 22px;
+        overflow: hidden;
+      }
+
+      .summary-top {
+        padding: 30px 30px 27px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.3), transparent 55%),
+          var(--brand-dark);
+        color: white;
+      }
+
+      .summary-kicker {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 19px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+
+      .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 9px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 0.67rem;
+        letter-spacing: 0;
+      }
+
+      .live-badge::before {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #bcd5b4;
+        box-shadow: 0 0 0 3px rgba(188, 213, 180, 0.15);
+        content: "";
+      }
+
+      .total-label {
+        margin: 0 0 2px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 0.82rem;
+      }
+
+      .total-amount {
+        margin: 0;
+        font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+        font-size: clamp(2.6rem, 6vw, 4rem);
+        font-weight: 800;
+        letter-spacing: -0.055em;
+        line-height: 1.06;
+      }
+
+      .stay-summary {
+        margin: 15px 0 0;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.82rem;
+      }
+
+      .summary-body {
+        padding: 25px 30px 30px;
+      }
+
+      .breakdown {
+        display: grid;
+        gap: 15px;
+        margin: 0;
+      }
+
+      .breakdown-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .breakdown-row dt,
+      .breakdown-row dd {
+        margin: 0;
+      }
+
+      .breakdown-row dt {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .breakdown-row dt span {
+        display: block;
+        margin-top: 2px;
+        color: #a09a90;
+        font-size: 0.7rem;
+      }
+
+      .breakdown-row dd {
+        font-size: 0.86rem;
+        font-weight: 800;
+        text-align: right;
+      }
+
+      .summary-divider {
+        height: 1px;
+        margin: 22px 0;
+        background: var(--line);
+      }
+
+      .formula-note {
+        margin: 0 0 17px;
+        padding: 12px 13px;
+        border-radius: 11px;
+        background: var(--canvas);
+        color: var(--muted);
+        font-size: 0.75rem;
+        line-height: 1.65;
+      }
+
+      .copy-button {
+        display: inline-flex;
+        width: 100%;
+        min-height: 52px;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 14px;
+        background: var(--ink);
+        color: white;
+        cursor: pointer;
+        font-weight: 800;
+        transition:
+          background-color 150ms ease,
+          transform 150ms ease;
+      }
+
+      .copy-button:hover {
+        background: #3a3731;
+        transform: translateY(-1px);
+      }
+
+      .copy-button:active {
+        transform: translateY(0);
+      }
+
+      .copy-button.is-copied {
+        background: var(--sage);
+      }
+
+      .footer-note {
+        margin: 22px 0 0;
+        color: var(--muted);
+        font-size: 0.75rem;
+        text-align: center;
+      }
+
+      @media (max-width: 860px) {
+        .page-shell {
+          width: min(680px, calc(100% - 28px));
+          padding-top: 30px;
+        }
+
+        .masthead {
+          display: block;
+        }
+
+        .masthead-note {
+          max-width: none;
+          margin: 17px 0 0 73px;
+          text-align: left;
+        }
+
+        .calculator-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .summary-panel {
+          position: static;
+        }
+      }
+
+      @media (max-width: 540px) {
+        .page-shell {
+          width: min(100% - 20px, 500px);
+          padding: 19px 0 34px;
+        }
+
+        .masthead {
+          margin-bottom: 20px;
+        }
+
+        .brand-lockup {
+          align-items: flex-start;
+          gap: 11px;
+        }
+
+        .brand-mark {
+          width: 48px;
+          height: 48px;
+          border-radius: 15px;
+          font-size: 22px;
+        }
+
+        .eyebrow {
+          font-size: 0.68rem;
+        }
+
+        h1 {
+          font-size: 1.83rem;
+        }
+
+        .masthead-note {
+          margin: 13px 2px 0;
+          font-size: 0.84rem;
+        }
+
+        .panel {
+          border-radius: 22px;
+        }
+
+        .form-panel {
+          padding: 22px 18px 25px;
+        }
+
+        .section + .section {
+          padding-top: 24px;
+          margin-top: 24px;
+        }
+
+        .room-options,
+        .date-grid,
+        .time-options {
+          grid-template-columns: 1fr;
+        }
+
+        .choice-card-body {
+          min-height: 98px;
+        }
+
+        .cat-row {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .stepper {
+          width: 100%;
+          grid-template-columns: 1fr 58px 1fr;
+        }
+
+        .stepper button,
+        .stepper input {
+          width: 100%;
+        }
+
+        .summary-top,
+        .summary-body {
+          padding-right: 22px;
+          padding-left: 22px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="page-shell">
+      <header class="masthead">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">🐾</div>
+          <div>
+            <p class="eyebrow">貓家日子・CAT HOTEL</p>
+            <h1>住宿金額計算機</h1>
+          </div>
+        </div>
+        <p class="masthead-note">
+          選擇房型、貓咪數量與住宿日期，系統會立即整理完整報價。
+        </p>
+      </header>
+
+      <div class="calculator-grid">
+        <form class="panel form-panel" id="calculatorForm" novalidate>
+          <section class="section" aria-labelledby="roomHeading">
+            <h2 class="section-heading" id="roomHeading">
+              <span class="step-number" aria-hidden="true">1</span>
+              選擇房型
+            </h2>
+
+            <fieldset>
+              <legend class="visually-hidden">房型</legend>
+              <div class="room-options">
+                <label class="choice-card">
+                  <input type="radio" name="room" value="small" checked />
+                  <span class="choice-card-body">
+                    <span class="choice-card-top">
+                      <span class="choice-card-title">小貓房</span>
+                      <span class="choice-check" aria-hidden="true">✓</span>
+                    </span>
+                    <span class="choice-card-price">
+                      <strong>NT$850</strong><span>／晚起</span>
+                    </span>
+                  </span>
+                </label>
+
+                <label class="choice-card">
+                  <input type="radio" name="room" value="family" />
+                  <span class="choice-card-body">
+                    <span class="choice-card-top">
+                      <span class="choice-card-title">探險家庭房</span>
+                      <span class="choice-check" aria-hidden="true">✓</span>
+                    </span>
+                    <span class="choice-card-price">
+                      <strong>NT$1,300</strong><span>／晚起</span>
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+          </section>
+
+          <section class="section" aria-labelledby="catsHeading">
+            <h2 class="section-heading" id="catsHeading">
+              <span class="step-number" aria-hidden="true">2</span>
+              填寫貓咪數量
+            </h2>
+
+            <div class="cat-row">
+              <div class="cat-copy">
+                <strong>幾隻貓咪入住？</strong>
+                <span>第 2 隻起，每隻每晚加收 NT$200</span>
+              </div>
+              <div class="stepper" role="group" aria-label="貓咪數量">
+                <button type="button" id="decreaseCats" aria-label="減少一隻貓">−</button>
+                <input
+                  id="catCount"
+                  name="catCount"
+                  type="number"
+                  value="1"
+                  min="1"
+                  max="20"
+                  step="1"
+                  inputmode="numeric"
+                  aria-label="貓咪數量"
+                />
+                <button type="button" id="increaseCats" aria-label="增加一隻貓">＋</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" aria-labelledby="datesHeading">
+            <h2 class="section-heading" id="datesHeading">
+              <span class="step-number" aria-hidden="true">3</span>
+              選擇住宿日期
+            </h2>
+
+            <div class="date-grid">
+              <label>
+                <span class="field-label">入住日期</span>
+                <input class="date-input" id="checkIn" name="checkIn" type="date" required />
+              </label>
+              <label>
+                <span class="field-label">退宿日期</span>
+                <input class="date-input" id="checkOut" name="checkOut" type="date" required />
+              </label>
+            </div>
+            <p class="date-caption">住宿晚數依日期差計算，例如 7/23–7/27 為 4 晚。</p>
+            <p class="error-message" id="dateError" role="alert"></p>
+          </section>
+
+          <section class="section" aria-labelledby="checkoutHeading">
+            <h2 class="section-heading" id="checkoutHeading">
+              <span class="step-number" aria-hidden="true">4</span>
+              選擇退宿時間
+            </h2>
+
+            <fieldset>
+              <legend class="visually-hidden">退宿時間</legend>
+              <div class="time-options">
+                <label class="time-choice">
+                  <input type="radio" name="checkoutTime" value="ontime" checked />
+                  <span class="time-choice-body">
+                    <span class="radio-dot" aria-hidden="true"></span>
+                    <span class="time-choice-copy">
+                      <strong>15:00（含）以前</strong>
+                      <span>不加收安親費</span>
+                    </span>
+                  </span>
+                </label>
+
+                <label class="time-choice">
+                  <input type="radio" name="checkoutTime" value="late" />
+                  <span class="time-choice-body">
+                    <span class="radio-dot" aria-hidden="true"></span>
+                    <span class="time-choice-copy">
+                      <strong>超過 15:00</strong>
+                      <span>加收單晚房價 50%</span>
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+          </section>
+        </form>
+
+        <aside class="panel summary-panel" aria-labelledby="summaryHeading">
+          <div class="summary-top">
+            <div class="summary-kicker">
+              <span id="summaryHeading">費用試算</span>
+              <span class="live-badge">即時更新</span>
+            </div>
+            <p class="total-label">預估總金額</p>
+            <p class="total-amount" id="totalAmount" aria-live="polite">NT$0</p>
+            <p class="stay-summary" id="staySummary">請選擇住宿日期</p>
+          </div>
+
+          <div class="summary-body">
+            <dl class="breakdown">
+              <div class="breakdown-row">
+                <dt>單晚房價<span id="nightlyFormula">基本房價 NT$850</span></dt>
+                <dd id="nightlyRate">NT$850</dd>
+              </div>
+              <div class="breakdown-row">
+                <dt>住宿費<span id="nightCountLabel">0 晚</span></dt>
+                <dd id="staySubtotal">NT$0</dd>
+              </div>
+              <div class="breakdown-row">
+                <dt>超時安親費<span id="daycareLabel">15:00（含）前退宿</span></dt>
+                <dd id="daycareFee">NT$0</dd>
+              </div>
+            </dl>
+
+            <div class="summary-divider"></div>
+
+            <p class="formula-note" id="formulaNote">
+              總金額＝單晚房價 × 住宿晚數。超過 15:00 退宿時，再加收單晚房價的 50%。
+            </p>
+
+            <button class="copy-button" id="copyQuote" type="button">
+              <span aria-hidden="true">▣</span>
+              <span id="copyButtonText">複製報價文字</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      <p class="footer-note">此頁面僅供費用試算，實際入住安排以貓家日子確認結果為準。</p>
+    </main>
+
+    <script>
+      (() => {
+        "use strict";
+
+        const ROOM_TYPES = Object.freeze({
+          small: { name: "小貓房", baseRate: 850 },
+          family: { name: "探險家庭房", baseRate: 1300 },
+        });
+
+        const EXTRA_CAT_RATE = 200;
+        const DAYCARE_RATE = 0.5;
+        const MILLISECONDS_PER_DAY = 86_400_000;
+
+        const form = document.getElementById("calculatorForm");
+        const catCountInput = document.getElementById("catCount");
+        const decreaseCatsButton = document.getElementById("decreaseCats");
+        const increaseCatsButton = document.getElementById("increaseCats");
+        const checkInInput = document.getElementById("checkIn");
+        const checkOutInput = document.getElementById("checkOut");
+        const dateError = document.getElementById("dateError");
+        const copyButton = document.getElementById("copyQuote");
+        const copyButtonText = document.getElementById("copyButtonText");
+
+        const output = {
+          totalAmount: document.getElementById("totalAmount"),
+          staySummary: document.getElementById("staySummary"),
+          nightlyFormula: document.getElementById("nightlyFormula"),
+          nightlyRate: document.getElementById("nightlyRate"),
+          nightCountLabel: document.getElementById("nightCountLabel"),
+          staySubtotal: document.getElementById("staySubtotal"),
+          daycareLabel: document.getElementById("daycareLabel"),
+          daycareFee: document.getElementById("daycareFee"),
+          formulaNote: document.getElementById("formulaNote"),
+        };
+
+        let currentQuote = null;
+        let copyResetTimer = null;
+
+        function toLocalISO(date) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          return `${year}-${month}-${day}`;
+        }
+
+        function addDays(isoDate, days) {
+          const [year, month, day] = isoDate.split("-").map(Number);
+          const date = new Date(year, month - 1, day);
+          date.setDate(date.getDate() + days);
+          return toLocalISO(date);
+        }
+
+        function daysBetween(checkIn, checkOut) {
+          const start = Date.parse(`${checkIn}T00:00:00Z`);
+          const end = Date.parse(`${checkOut}T00:00:00Z`);
+          return Math.round((end - start) / MILLISECONDS_PER_DAY);
+        }
+
+        function formatMoney(amount) {
+          return `NT$${new Intl.NumberFormat("zh-TW", {
+            maximumFractionDigits: 0,
+          }).format(amount)}`;
+        }
+
+        function formatDate(isoDate, includeYear = false) {
+          const [year, month, day] = isoDate.split("-").map(Number);
+          return new Intl.DateTimeFormat("zh-TW", {
+            ...(includeYear ? { year: "numeric" } : {}),
+            month: "numeric",
+            day: "numeric",
+          }).format(new Date(year, month - 1, day));
+        }
+
+        function formatDateForQuote(isoDate) {
+          return isoDate.replaceAll("-", "/");
+        }
+
+        function clampCats(value) {
+          const parsed = Number.parseInt(value, 10);
+          if (!Number.isFinite(parsed)) return 1;
+          return Math.min(20, Math.max(1, parsed));
+        }
+
+        function calculateStay({ roomKey, cats, checkIn, checkOut, isLate }) {
+          const room = ROOM_TYPES[roomKey];
+          const nights = daysBetween(checkIn, checkOut);
+          const extraCatFeePerNight = EXTRA_CAT_RATE * Math.max(0, cats - 1);
+          const nightlyRate = room.baseRate + extraCatFeePerNight;
+          const staySubtotal = nightlyRate * nights;
+          const daycareFee = isLate ? nightlyRate * DAYCARE_RATE : 0;
+
+          return {
+            room,
+            roomKey,
+            cats,
+            checkIn,
+            checkOut,
+            isLate,
+            nights,
+            extraCatFeePerNight,
+            nightlyRate,
+            staySubtotal,
+            daycareFee,
+            total: staySubtotal + daycareFee,
+          };
+        }
+
+        function getFormState() {
+          return {
+            roomKey: form.elements.room.value,
+            cats: clampCats(catCountInput.value),
+            checkIn: checkInInput.value,
+            checkOut: checkOutInput.value,
+            isLate: form.elements.checkoutTime.value === "late",
+          };
+        }
+
+        function setDateError(message = "") {
+          dateError.textContent = message;
+          dateError.classList.toggle("is-visible", Boolean(message));
+          checkOutInput.setAttribute("aria-invalid", message ? "true" : "false");
+        }
+
+        function renderEmptyState(state, message) {
+          const room = ROOM_TYPES[state.roomKey];
+          const extraCatFeePerNight = EXTRA_CAT_RATE * Math.max(0, state.cats - 1);
+          const nightlyRate = room.baseRate + extraCatFeePerNight;
+
+          currentQuote = null;
+          output.totalAmount.textContent = "NT$0";
+          output.staySummary.textContent = "請確認住宿日期";
+          output.nightlyRate.textContent = formatMoney(nightlyRate);
+          output.nightlyFormula.textContent =
+            state.cats > 1
+              ? `${formatMoney(room.baseRate)}＋加貓 ${formatMoney(extraCatFeePerNight)}`
+              : `基本房價 ${formatMoney(room.baseRate)}`;
+          output.nightCountLabel.textContent = "0 晚";
+          output.staySubtotal.textContent = "NT$0";
+          output.daycareLabel.textContent = state.isLate
+            ? "單晚房價 × 50%"
+            : "15:00（含）前退宿";
+          output.daycareFee.textContent = "NT$0";
+          copyButton.disabled = true;
+          setDateError(message);
+        }
+
+        function renderQuote(quote) {
+          currentQuote = quote;
+          const spansDifferentYears = quote.checkIn.slice(0, 4) !== quote.checkOut.slice(0, 4);
+
+          output.totalAmount.textContent = formatMoney(quote.total);
+          output.staySummary.textContent = `${quote.room.name}・${quote.cats} 貓・${formatDate(
+            quote.checkIn,
+            spansDifferentYears,
+          )}–${formatDate(quote.checkOut, spansDifferentYears)}・${quote.nights} 晚`;
+          output.nightlyRate.textContent = formatMoney(quote.nightlyRate);
+          output.nightlyFormula.textContent =
+            quote.cats > 1
+              ? `${formatMoney(quote.room.baseRate)}＋加貓 ${formatMoney(quote.extraCatFeePerNight)}`
+              : `基本房價 ${formatMoney(quote.room.baseRate)}`;
+          output.nightCountLabel.textContent = `${formatMoney(quote.nightlyRate)} × ${quote.nights} 晚`;
+          output.staySubtotal.textContent = formatMoney(quote.staySubtotal);
+          output.daycareLabel.textContent = quote.isLate
+            ? `${formatMoney(quote.nightlyRate)} × 50%`
+            : "15:00（含）前退宿";
+          output.daycareFee.textContent = formatMoney(quote.daycareFee);
+          output.formulaNote.textContent = quote.isLate
+            ? `總金額＝${formatMoney(quote.nightlyRate)} × ${quote.nights} 晚＋${formatMoney(
+                quote.daycareFee,
+              )} 安親費。`
+            : `總金額＝${formatMoney(quote.nightlyRate)} × ${quote.nights} 晚。`;
+
+          copyButton.disabled = false;
+          setDateError();
+        }
+
+        function updateCalculator() {
+          const state = getFormState();
+          catCountInput.value = state.cats;
+          decreaseCatsButton.disabled = state.cats <= 1;
+          increaseCatsButton.disabled = state.cats >= 20;
+
+          if (!state.checkIn || !state.checkOut) {
+            renderEmptyState(state, "請完整選擇入住日期與退宿日期。");
+            return;
+          }
+
+          const nights = daysBetween(state.checkIn, state.checkOut);
+          if (!Number.isFinite(nights) || nights < 1) {
+            renderEmptyState(state, "退宿日期需晚於入住日期至少一天。");
+            return;
+          }
+
+          renderQuote(calculateStay(state));
+        }
+
+        function setCatCount(nextValue) {
+          catCountInput.value = clampCats(nextValue);
+          updateCalculator();
+        }
+
+        function createQuoteText(quote) {
+          const lines = [
+            "貓家日子｜住宿費用試算",
+            "",
+            `房型：${quote.room.name}`,
+            `貓咪數量：${quote.cats} 隻`,
+            `住宿日期：${formatDateForQuote(quote.checkIn)}–${formatDateForQuote(
+              quote.checkOut,
+            )}（共 ${quote.nights} 晚）`,
+            `退宿時間：${quote.isLate ? "超過 15:00" : "15:00（含）以前"}`,
+            "",
+            `單晚房價：${formatMoney(quote.nightlyRate)}`,
+            `住宿費：${formatMoney(quote.staySubtotal)}`,
+            `超時安親費：${formatMoney(quote.daycareFee)}`,
+            `合計：${formatMoney(quote.total)}`,
+            "",
+            "＊實際入住安排與金額以貓家日子確認結果為準。",
+          ];
+
+          return lines.join("\n");
+        }
+
+        async function copyText(text) {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return;
+          }
+
+          const textArea = document.createElement("textarea");
+          textArea.value = text;
+          textArea.setAttribute("readonly", "");
+          textArea.style.position = "fixed";
+          textArea.style.opacity = "0";
+          document.body.appendChild(textArea);
+          textArea.select();
+          const didCopy = document.execCommand("copy");
+          textArea.remove();
+          if (!didCopy) throw new Error("Copy command failed");
+        }
+
+        function showCopyState(message, successful) {
+          window.clearTimeout(copyResetTimer);
+          copyButtonText.textContent = message;
+          copyButton.classList.toggle("is-copied", successful);
+          copyResetTimer = window.setTimeout(() => {
+            copyButtonText.textContent = "複製報價文字";
+            copyButton.classList.remove("is-copied");
+          }, 1800);
+        }
+
+        function initializeDates() {
+          const today = new Date();
+          const checkIn = toLocalISO(today);
+          const checkOut = addDays(checkIn, 1);
+          checkInInput.value = checkIn;
+          checkOutInput.value = checkOut;
+          checkOutInput.min = checkOut;
+        }
+
+        form.addEventListener("input", updateCalculator);
+        form.addEventListener("change", updateCalculator);
+
+        checkInInput.addEventListener("change", () => {
+          if (!checkInInput.value) return;
+          const earliestCheckOut = addDays(checkInInput.value, 1);
+          checkOutInput.min = earliestCheckOut;
+          if (!checkOutInput.value || checkOutInput.value < earliestCheckOut) {
+            checkOutInput.value = earliestCheckOut;
+          }
+          updateCalculator();
+        });
+
+        decreaseCatsButton.addEventListener("click", () => {
+          setCatCount(Number(catCountInput.value) - 1);
+        });
+
+        increaseCatsButton.addEventListener("click", () => {
+          setCatCount(Number(catCountInput.value) + 1);
+        });
+
+        catCountInput.addEventListener("blur", () => {
+          setCatCount(catCountInput.value);
+        });
+
+        copyButton.addEventListener("click", async () => {
+          if (!currentQuote) return;
+          try {
+            await copyText(createQuoteText(currentQuote));
+            showCopyState("已複製，可以貼給客人了", true);
+          } catch (error) {
+            showCopyState("複製失敗，請再試一次", false);
+          }
+        });
+
+        initializeDates();
+        updateCalculator();
+
+        // 保留純計算函式，方便日後自動測試與調整房價。
+        window.CatStayCalculator = Object.freeze({
+          calculateStay,
+          daysBetween,
+          roomTypes: ROOM_TYPES,
+        });
+      })();
+    </script>
+  </body>
+</html>
